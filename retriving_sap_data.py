@@ -7,7 +7,7 @@ import pandas as pd
 import time
 
 
-def get_mkpf_and_mseg_data(date1, date2, sap_system, stor_loc_filter, materials, bwart_filter, mkpf_chunk_size, material_chunk_size, printing_frequency):
+def get_mkpf_and_mseg_afpo_data(date1, date2, sap_system, stor_loc_filter, materials, bwart_filter, mkpf_chunk_size, material_chunk_size, aufnr_chunks_size, printing_frequency):
     start_time = time.time()
 
     with get_conn(sap_system) as conn:
@@ -148,7 +148,7 @@ def get_mkpf_and_mseg_data(date1, date2, sap_system, stor_loc_filter, materials,
         )
 
         print(
-            f"\nFinished "
+            f"\nFinished MSEG"
             f"| rows={len(mseg)} "
             f"| total={total_time:.2f}s"
         )
@@ -156,4 +156,56 @@ def get_mkpf_and_mseg_data(date1, date2, sap_system, stor_loc_filter, materials,
         mseg_df = pd.DataFrame(mseg)
         # print("MSEG DF: \n", mseg_df.head(10))
 
-    return mkpf_df, mseg_df
+        afpo_start = time.perf_counter()
+
+        customer_order_numers_list = mseg_df['AUFNR'].to_list()
+        aufnr_chunks = chunks(customer_order_numers_list, aufnr_chunks_size)
+
+        afpo = []
+
+        for afpo_num, afpo_chunk in enumerate(aufnr_chunks, start=1):
+            aufnr_start = time.perf_counter()
+            is_printing = afpo_num % printing_frequency == 0
+
+            aufnr_filter = " OR ".join(
+                [f"AUFNR = '{num}'" for num in afpo_chunk]
+            )
+
+            afpo_chunk_data = rfc_read_table(
+                conn=conn,
+                table="AFPO",
+                fields=["AUFNR", "VERID"],
+                where=f"""
+                    {aufnr_filter}
+                """
+            )
+
+            afpo.extend(afpo_chunk_data)
+
+            aufnr_time = (
+                    time.perf_counter()
+                    - aufnr_start
+            )
+
+            if is_printing:
+                print(
+                    f"{len(afpo_chunk)} rows "
+                    f"| {aufnr_time:.2f}s"
+                )
+
+        total_time_afpo = (
+                time.perf_counter()
+                - afpo_start
+        )
+
+        print(
+            f"\nFinished AFPO"
+            f"| rows={len(afpo)} "
+            f"| total={total_time_afpo:.2f}s"
+        )
+
+    afpo_df = pd.DataFrame(afpo)
+
+    mseg_afpo_df = mseg_df.merge(afpo_df, how="left", on="AUFNR")
+
+    return mkpf_df, mseg_afpo_df
