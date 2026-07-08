@@ -14,8 +14,8 @@ output_folder = r"P:\Technisch\PLANY PRODUKCJI\PLANIŚCI\PP_TOOLS_TEMP_FILES\16_
 master_data_folder = r"P:\Technisch\PLANY PRODUKCJI\PLANIŚCI\PP_TOOLS_TEMP_FILES\16_WOD_MONTHLY_EFFICIENCY_REPORT\master-data"
 data_file_name = r'\RaportDane.xlsx'
 
-date1 = '20260529'
-date2 = '20260529'
+date1 = '20260707'
+date2 = '20260707'
 
 negative_bwarts = [
     '102', '261'
@@ -28,6 +28,7 @@ def efficiency_report(prd_ord_df, data_df, master_data_folder, data_file):
     """
     # cohv_df = pd.read_csv('cohv_df.csv', index_col="index")
     # cohv_df.drop(columns=['Unnamed: 0'], inplace=True)
+    prd_ord_df["VERID"] = prd_ord_df["VERID"].replace('', pd.NA)
     prd_ord_df.fillna(value={"VERID": 0}, inplace=True)
     prd_ord_df = prd_ord_df.astype({"VERID": str})
     # prd_ord_df['VERID'] = prd_ord_df['VERID'].apply(lambda x: x.split(".")[0])
