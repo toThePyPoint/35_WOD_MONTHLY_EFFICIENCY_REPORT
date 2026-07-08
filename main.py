@@ -4,6 +4,8 @@ from send_email import send_email_from_application
 import pandas as pd
 from datetime import datetime
 import time
+import tkinter as tk
+from tkinter import messagebox
 
 
 SAP_SYSTEM = "P11_SSO"
@@ -14,8 +16,58 @@ output_folder = r"P:\Technisch\PLANY PRODUKCJI\PLANIŚCI\PP_TOOLS_TEMP_FILES\16_
 master_data_folder = r"P:\Technisch\PLANY PRODUKCJI\PLANIŚCI\PP_TOOLS_TEMP_FILES\16_WOD_MONTHLY_EFFICIENCY_REPORT\master-data"
 data_file_name = r'\RaportDane.xlsx'
 
-date1 = '20260707'
-date2 = '20260707'
+
+def ask_for_report_dates():
+    date_format = "%Y-%m-%d"
+    default_date = datetime.today().strftime(date_format)
+    result = {"date1": None, "date2": None}
+
+    root = tk.Tk()
+    root.title("Report dates")
+    root.resizable(False, False)
+
+    tk.Label(root, text="Start date (yyyy-mm-dd):").grid(row=0, column=0, padx=10, pady=(10, 5), sticky="w")
+    date1_entry = tk.Entry(root, width=16)
+    date1_entry.insert(0, default_date)
+    date1_entry.grid(row=0, column=1, padx=10, pady=(10, 5))
+
+    tk.Label(root, text="End date (yyyy-mm-dd):").grid(row=1, column=0, padx=10, pady=5, sticky="w")
+    date2_entry = tk.Entry(root, width=16)
+    date2_entry.insert(0, default_date)
+    date2_entry.grid(row=1, column=1, padx=10, pady=5)
+
+    def submit():
+        try:
+            parsed_date1 = datetime.strptime(date1_entry.get().strip(), date_format)
+            parsed_date2 = datetime.strptime(date2_entry.get().strip(), date_format)
+        except ValueError:
+            messagebox.showerror("Invalid date", "Please enter dates in yyyy-mm-dd format.", parent=root)
+            return
+
+        result["date1"] = parsed_date1.strftime("%Y%m%d")
+        result["date2"] = parsed_date2.strftime("%Y%m%d")
+        root.destroy()
+
+    def cancel():
+        root.destroy()
+
+    button_frame = tk.Frame(root)
+    button_frame.grid(row=2, column=0, columnspan=2, padx=10, pady=(5, 10), sticky="e")
+    tk.Button(button_frame, text="OK", width=10, command=submit).pack(side="left", padx=(0, 5))
+    tk.Button(button_frame, text="Cancel", width=10, command=cancel).pack(side="left")
+
+    root.bind("<Return>", lambda _event: submit())
+    root.bind("<Escape>", lambda _event: cancel())
+    date1_entry.focus_set()
+    root.mainloop()
+
+    if result["date1"] is None or result["date2"] is None:
+        raise SystemExit("Report date selection cancelled.")
+
+    return result["date1"], result["date2"]
+
+
+date1, date2 = ask_for_report_dates()
 
 negative_bwarts = [
     '102', '261'
