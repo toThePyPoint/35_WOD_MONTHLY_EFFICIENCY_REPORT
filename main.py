@@ -73,7 +73,12 @@ negative_bwarts = [
     '102', '261'
 ]
 
-def efficiency_report(prd_ord_df, data_df, master_data_folder, data_file):
+
+def format_report_date(date_text):
+    return datetime.strptime(date_text, "%Y%m%d").strftime("%Y-%m-%d")
+
+
+def efficiency_report(prd_ord_df, data_df, master_data_folder, data_file, date_range):
     """
     :param prd_ord_df: df with production orders data
     :return:
@@ -98,6 +103,7 @@ def efficiency_report(prd_ord_df, data_df, master_data_folder, data_file):
     result_dict = result_array.to_dict()
 
     result_sheet_df['Szt'] = result_sheet_df['Szt'].apply(lambda x: result_dict.get(x, 0))
+    result_sheet_df['Szt'] = result_sheet_df['Szt'].astype(int)
 
     # total sum row
     total_sum = result_sheet_df["Szt"].sum()
@@ -109,10 +115,10 @@ def efficiency_report(prd_ord_df, data_df, master_data_folder, data_file):
     with open("report.html", "r", encoding='utf-8') as file:
         html_content = file.read()
 
-    date_today = datetime.today().strftime('%Y-%m-%d')
+    # date_today = datetime.today().strftime('%Y-%m-%d')
 
-    email_body = f"Wydajność WOD {date_today}:\n" + html_content
-    subject = f"Raport Wydajności {date_today}"
+    email_body = f"Wydajność WOD {date_range}:\n" + html_content
+    subject = f"Raport Wydajności {date_range}"
     recepients = ("dariusz.szumlak@rotofrank.com; robert.dobrzynski@rotofrank.com; grzegorz.fiutka@rotofrank.com;"
                   "arkadiusz.kubera@rotofrank.com;; marcin.wrobel@rotofrank.com; dariusz.dudek@rotofrank.com")
 
@@ -184,7 +190,14 @@ final_df_101_102.to_excel(output_folder + "/mseg_mkpf_101_102_df.xlsx", index=Fa
 # final_df.to_excel(output_folder + "/mseg_mkpf_261_262_df.xlsx", index=False)
 # ===========================================================
 
+formatted_date1 = format_report_date(date1)
+formatted_date2 = format_report_date(date2)
 
-efficiency_report(final_df_101_102, data_df, master_data_folder, data_file_name)
+if formatted_date1 == formatted_date2:
+    report_date_range = formatted_date1
+else:
+    report_date_range = f"{formatted_date1} - {formatted_date2}"
+
+efficiency_report(final_df_101_102, data_df, master_data_folder, data_file_name, report_date_range)
 
 print("Total_Execution Time: ", time.time() - start_time)
